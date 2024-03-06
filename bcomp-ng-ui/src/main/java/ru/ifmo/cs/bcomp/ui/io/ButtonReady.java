@@ -1,12 +1,13 @@
 package ru.ifmo.cs.bcomp.ui.io;
+
 import ru.ifmo.cs.bcomp.IOCtrl;
 import ru.ifmo.cs.components.DataDestination;
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.COLOR_ACTIVE;
-import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.COLOR_TEXT;
-import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.FONT_COURIER_PLAIN_12;
+
+import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.*;
 
 public class ButtonReady extends JButton implements DataDestination {
     private IOCtrl ioCtrl;

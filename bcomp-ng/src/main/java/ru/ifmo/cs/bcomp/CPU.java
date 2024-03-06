@@ -3,16 +3,17 @@
  */
 package ru.ifmo.cs.bcomp;
 
+import ru.ifmo.cs.components.*;
+
 import java.util.EnumMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import ru.ifmo.cs.components.*;
+
 import static ru.ifmo.cs.bcomp.ControlSignal.*;
-import static ru.ifmo.cs.bcomp.State.*;
 import static ru.ifmo.cs.bcomp.RunningCycle.*;
+import static ru.ifmo.cs.bcomp.State.*;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class CPU {
@@ -72,7 +73,7 @@ public class CPU {
             lock.lock();
 
             try {
-                for (;;) {
+                for (; ; ) {
                     lockFinish.signalAll();
                     lockStart.await();
 
@@ -229,12 +230,12 @@ public class CPU {
         // Control Micro Command
         Control vr0 = newValve(mr, VR_WIDTH, 16, TYPE,
                 new DataDestination() {
-            @Override
-            public synchronized void setValue(long value) {
-                newmp.setValue((value >> 8) & BasicComponent.calculateMask(8));
-                expected.setValue((value >> 16) & 1L);
-            }
-        }
+                    @Override
+                    public synchronized void setValue(long value) {
+                        newmp.setValue((value >> 8) & BasicComponent.calculateMask(8));
+                        expected.setValue((value >> 16) & 1L);
+                    }
+                }
         );
         clock1.addDestination(vr0);
         for (long i = 0; i < 8; i++) {

@@ -73,11 +73,11 @@ public class DisplayStyles {
     // XXX: Need to rename and reorder all consts
     // Coordinates and dimentions
 
-    public static final int PANE_HEIGHT =580;
+    public static final int PANE_HEIGHT = 580;
 
     // Memory cell height
     public static final int CELL_HEIGHT = 25;
-    public static final int REG_HEIGHT =  CELL_HEIGHT + 3;
+    public static final int REG_HEIGHT = CELL_HEIGHT + 3;
     // Basic view
     public static final int REG_TITLE_WIDTH = 25;
     private static final int REG_1_WIDTH = 2 * FONT_COURIER_BOLD_21_WIDTH + 2;
@@ -156,7 +156,7 @@ public class DisplayStyles {
     public static final int BUS_INSTR_TO_CU_Y = CYCLEVIEW_Y - ARROW - 1;
 
     // Frame dimentions
-    public static final int PANE_WIDTH = 5*REG_11_WIDTH<900?900:5*REG_11_WIDTH;
+    public static final int PANE_WIDTH = 5 * REG_11_WIDTH < 900 ? 900 : 5 * REG_11_WIDTH;
     public static final Dimension PANE_SIZE = new Dimension(PANE_WIDTH, PANE_HEIGHT);
 
     // IO view

@@ -3,23 +3,22 @@
  */
 package ru.ifmo.cs.bcomp.ui;
 
-import ru.ifmo.cs.components.Utils;
-import java.util.ArrayList;
-import java.util.Scanner;
 import ru.ifmo.cs.bcomp.*;
-import ru.ifmo.cs.components.DataDestination;
 import ru.ifmo.cs.bcomp.assembler.AsmNg;
 import ru.ifmo.cs.bcomp.assembler.Program;
+import ru.ifmo.cs.components.Utils;
+
+import java.util.ArrayList;
+import java.util.Scanner;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class CLI {
 
     private final BasicComp bcomp;
     private final CPU cpu;
-	private final IOCtrl[] ioctrls;
+    private final IOCtrl[] ioctrls;
     private final ArrayList<Long> writelist = new ArrayList<Long>();
 
     private int sleeptime = 1;
@@ -33,65 +32,54 @@ public class CLI {
         this.bcomp = bcomp;
 
         cpu = bcomp.getCPU();
-        cpu.addDestination(ControlSignal.STOR, new DataDestination() {
-            @Override
-            public void setValue(long value) {
-                long addr = cpu.getRegValue(Reg.AR);
+        cpu.addDestination(ControlSignal.STOR, value -> {
+            long addr = cpu.getRegValue(Reg.AR);
 
-                if (!writelist.contains(addr)) // Saving changed mem addr to print later
-                {
-                    writelist.add(addr);
-                }
+            if (!writelist.contains(addr)) // Saving changed mem addr to print later
+            {
+                writelist.add(addr);
             }
         });
 
-        cpu.setCPUStartListener(new Runnable() {
-            @Override
-            public void run() {
-                if (!printOnStop) {
-                    return;
-                }
+        cpu.setCPUStartListener(() -> {
+            if (!printOnStop) {
+                return;
+            }
 
-                writelist.clear();
-                // Saving IP/MP to print registers later
-                savedPointer = cpu.getRegValue(cpu.getClockState() ? Reg.IP : Reg.MP);
-                printRegsTitle();
+            writelist.clear();
+            // Saving IP/MP to print registers later
+            savedPointer = cpu.getRegValue(cpu.getClockState() ? Reg.IP : Reg.MP);
+            printRegsTitle();
+        });
+
+        // Print changed mem
+        cpu.setCPUStopListener(() -> {
+            sleep = 0;
+
+            if (!printOnStop) {
+                return;
+            }
+
+            printRegs(writelist.isEmpty() ? "" : " " + getMemory(writelist.remove(0)));
+
+            for (Long wraddr : writelist) {
+                println(String.format("%1$46s", " ") + getMemory(wraddr));
             }
         });
 
-        cpu.setCPUStopListener(new Runnable() { // Print changed mem
-            @Override
-            public void run() {
-                sleep = 0;
+        cpu.setTickFinishListener(() -> {
+            if (sleep <= 0) {
+                return;
+            }
 
-                if (!printOnStop) {
-                    return;
-                }
-
-                printRegs(writelist.isEmpty() ? "" : " " + getMemory(writelist.remove(0)));
-
-                for (Long wraddr : writelist) {
-                    println(String.format("%1$46s", " ") + getMemory(wraddr));
-                }
+            try {
+                Thread.sleep(sleep);
+            } catch (InterruptedException e) {
+                /*totally not empty*/
             }
         });
 
-        cpu.setTickFinishListener(new Runnable() {
-            @Override
-            public void run() {
-                if (sleep <= 0) {
-                    return;
-                }
-
-                try {
-                    Thread.sleep(sleep);
-                } catch (InterruptedException e) {
-                    /*totally not empty*/
-				}
-            }
-        });
-
-		ioctrls = bcomp.getIOCtrls();
+        ioctrls = bcomp.getIOCtrls();
     }
 
     private String getReg(Reg reg) {
@@ -167,7 +155,7 @@ public class CLI {
                 + "mr[ead]\t\t- Чтение микрокоманды\n"
                 + "md[ecode]\t- Декодировать текущую микрокоманду\n"
                 + "mdecodea[ll]\t- Декодировать всю микропрограмму\n"
-				+ "stat[e]\t\t- Вывести регистр состояния БЭВМ\n"
+                + "stat[e]\t\t- Вывести регистр состояния БЭВМ\n"
                 + "io\t\t- Вывод состояния всех ВУ\n"
                 + "io addr\t\t- Вывод состояния указанного ВУ\n"
                 + "io addr value\t- Запись value в указанное ВУ\n"
@@ -188,7 +176,7 @@ public class CLI {
                 + "Используйте ? или help для получения справки");
 
         String line;
-        for (;;) {
+        for (; ; ) {
             try {
                 line = fetchLine();
             } catch (Exception e) {
@@ -301,27 +289,27 @@ public class CLI {
                     continue;
                 }
 
-				if (checkCmd(cmd, "mdecode")) {
+                if (checkCmd(cmd, "mdecode")) {
                     printMicroMemory(cpu.getRegValue(Reg.MP));
                     continue;
                 }
 
-				if (checkCmd(cmd, "mdecodeall")) {
-			        for (i = 0; i < (1L << cpu.getMicroCode().getAddrWidth()); i++)
-						if (cpu.getMicroCode().getValue(i) != 0)
-							printMicroMemory(i);
+                if (checkCmd(cmd, "mdecodeall")) {
+                    for (i = 0; i < (1L << cpu.getMicroCode().getAddrWidth()); i++)
+                        if (cpu.getMicroCode().getValue(i) != 0)
+                            printMicroMemory(i);
                     continue;
                 }
 
-				if (checkCmd(cmd, "state")) {
-					for (State state : State.values())
-						print(state.name() + ": " + cpu.getProgramState(state) + " ");
+                if (checkCmd(cmd, "state")) {
+                    for (State state : State.values())
+                        print(state.name() + ": " + cpu.getProgramState(state) + " ");
 
-					println("");
-					continue;
-				}
+                    println("");
+                    continue;
+                }
 
-				if (checkCmd(cmd, "io")) {
+                if (checkCmd(cmd, "io")) {
                     if (i == cmds.length - 1) {
                         for (int ioaddr = 0; ioaddr < 4; ioaddr++) {
                             printIO(ioaddr);
@@ -333,7 +321,7 @@ public class CLI {
 
                     if (i < cmds.length - 1) {
                         value = Integer.parseInt(cmds[++i], 16);
-							ioctrls[ioaddr].setData(value);
+                        ioctrls[ioaddr].setData(value);
                     }
 
                     printIO(ioaddr);
@@ -346,7 +334,7 @@ public class CLI {
                     }
 
                     int ioaddr = Integer.parseInt(cmds[++i], 16);
-						ioctrls[ioaddr].setReady();
+                    ioctrls[ioaddr].setReady();
                     printIO(ioaddr);
                     continue;
                 }
@@ -356,7 +344,7 @@ public class CLI {
 
                     println("Введите текст программы. Для окончания введите END");
 
-                    for (;;) {
+                    for (; ; ) {
                         line = fetchLine();
 
                         if (line.equalsIgnoreCase("END")) {

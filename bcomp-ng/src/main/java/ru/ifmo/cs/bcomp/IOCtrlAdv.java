@@ -6,7 +6,6 @@ package ru.ifmo.cs.bcomp;
 import ru.ifmo.cs.components.*;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class IOCtrlAdv extends IOCtrl {
@@ -15,10 +14,10 @@ public class IOCtrlAdv extends IOCtrl {
     private final int CONTROL = 3;
 
     private final Register[] registers = {
-        new Register(8),
-        new Register(8),
-        new Register(8),
-        new Register(8),};
+            new Register(8),
+            new Register(8),
+            new Register(8),
+            new Register(8),};
     private final Control writeToRegister[] = new Control[registers.length];
     private final DataDestination irqsc;
 
@@ -38,18 +37,18 @@ public class IOCtrlAdv extends IOCtrl {
 
         for (int i = 0; i < registers.length; i++) {
             checkRegister(
-                new Valve(ioctrl, 8, 0, i,
-                    // Input
-                    new Valve(Consts.consts[1], 1, 0, IOControlSignal.IN.ordinal(),
-                            new Valve(registers[i], 8, 0, 0, iodata),
-                            rdy
-                    ),
-                    // Output
-                    new Valve(Consts.consts[1], 1, 0, IOControlSignal.OUT.ordinal(),
-                            writeToRegister[i] = new Valve(iodata, 8, 0, 0, registers[i]),
-                            rdy
+                    new Valve(ioctrl, 8, 0, i,
+                            // Input
+                            new Valve(Consts.consts[1], 1, 0, IOControlSignal.IN.ordinal(),
+                                    new Valve(registers[i], 8, 0, 0, iodata),
+                                    rdy
+                            ),
+                            // Output
+                            new Valve(Consts.consts[1], 1, 0, IOControlSignal.OUT.ordinal(),
+                                    writeToRegister[i] = new Valve(iodata, 8, 0, 0, registers[i]),
+                                    rdy
+                            )
                     )
-                )
             );
         }
 

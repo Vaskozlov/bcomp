@@ -1,10 +1,13 @@
 package ru.ifmo.cs.bcomp.ui.io;
+
 import ru.ifmo.cs.bcomp.IOCtrl;
 import ru.ifmo.cs.bcomp.ui.components.RegisterView;
+
 import javax.swing.*;
 import java.awt.*;
 
-import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.*;
+import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.COLOR_BACKGROUND;
+import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.REG_TITLE_WIDTH;
 
 public class ThirdIO extends IODevice {
     private RegisterView output;
@@ -24,10 +27,10 @@ public class ThirdIO extends IODevice {
         output.setMinimumSize(output.getSize());
         output.setTitle("DR");
         ButtonPanel input = new ButtonPanel(output);
-        ButtonReady buttonReady = new ButtonReady(ioctrl,getRes().getString("ready"));
-        ioctrl.addDestination(1,buttonReady);
+        ButtonReady buttonReady = new ButtonReady(ioctrl, getRes().getString("ready"));
+        ioctrl.addDestination(1, buttonReady);
         ioctrl.addDestination(0, output);
-       GridBagConstraints constraints = new GridBagConstraints() {{
+        GridBagConstraints constraints = new GridBagConstraints() {{
             gridy = 0;
             gridx = 3;
             gridwidth = GridBagConstraints.REMAINDER;

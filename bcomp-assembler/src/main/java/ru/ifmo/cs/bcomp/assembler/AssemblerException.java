@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 
 /**
- *
  * @author serge
  */
 public class AssemblerException extends RecognitionException {
@@ -27,16 +26,15 @@ public class AssemblerException extends RecognitionException {
         //System.out.println(msg+recognizer.getCurrentToken());
         this.setOffendingToken(recognizer.getCurrentToken());
     }
-    
+
     public AssemblerException(String msg, Parser recognizer) {
         super(msg, recognizer, recognizer.getInputStream(), recognizer.getContext());
         this.setOffendingToken(recognizer.getCurrentToken());
     }
-    
+
     public ParserRuleContext getParserRuleContext() {
-        return (ParserRuleContext)getCtx();
+        return (ParserRuleContext) getCtx();
     }
 
-    
-    
+
 }

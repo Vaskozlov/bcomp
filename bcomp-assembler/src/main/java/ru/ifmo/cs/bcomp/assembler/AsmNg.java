@@ -15,7 +15,6 @@ import ru.ifmo.cs.bcomp.grammar.*;
 import ru.ifmo.cs.bcomp.grammar.BCompNGParser.*;
 
 /**
- *
  * @author serge
  */
 public class AsmNg {
@@ -29,26 +28,26 @@ public class AsmNg {
     public static void main(String[] args) throws Exception {
         AsmNg asmng = new AsmNg(
                 "ORG FF\n"
-                + "START: LOOP START\n"
-                + "LD   #FF\n"
-                + "IN \n"
-                + "ad: and ad\n"
-                + "ORG 030h\n"
-                + "    OR $ad\n"
-                + "bc:\n"
-                + "    WORD бяка\n"
-                + "    LD #0xFF\n"
-                + "    LD #-0x10\n"
-                + "    LD #0x-10\n"
-                + "    ST &0\n"
-                + "    ВЖУХ бяка\n"
-                + "eb:    WORD 44H,33,49,50\n"
-                + "бяка: WORD 22H\n"
-                + "    BR бяка\n"
-                + "    ПРЫГ (bc)\n"
-                + "    WORD 1 dup(-0x10)\n"
-                + "    WORD 0x12,?,0x13 ; komment\n"
-                + "");
+                        + "START: LOOP START\n"
+                        + "LD   #FF\n"
+                        + "IN \n"
+                        + "ad: and ad\n"
+                        + "ORG 030h\n"
+                        + "    OR $ad\n"
+                        + "bc:\n"
+                        + "    WORD бяка\n"
+                        + "    LD #0xFF\n"
+                        + "    LD #-0x10\n"
+                        + "    LD #0x-10\n"
+                        + "    ST &0\n"
+                        + "    ВЖУХ бяка\n"
+                        + "eb:    WORD 44H,33,49,50\n"
+                        + "бяка: WORD 22H\n"
+                        + "    BR бяка\n"
+                        + "    ПРЫГ (bc)\n"
+                        + "    WORD 1 dup(-0x10)\n"
+                        + "    WORD 0x12,?,0x13 ; komment\n"
+                        + "");
         Program prog = asmng.compile();
         System.out.println("-------errors--------");
         System.out.println(asmng.getErrors());
@@ -93,7 +92,7 @@ public class AsmNg {
 
     public AsmNg(String program) {
         //TODO fix grammar prog statement
-        this(CharStreams.fromString(program+"\n"));
+        this(CharStreams.fromString(program + "\n"));
     }
 
     public BCompNGParser getParser() {
@@ -178,22 +177,25 @@ public class AsmNg {
                         //make String copy. Do not remove new String(..)
                         String ref = new String(ICtx.label().getText());
                         if (ref.startsWith("."))
-                             ref = curLbl.name + ref;
+                            ref = curLbl.name + ref;
                         i.operand.reference = ref;
                         //i.operand.reference = new String(ICtx.label().getText());
                     }
                     if (instr.type == Instruction.Type.IO) {
                         AssemblerException ae = new AssemblerException("Device or vector shall be valid number", parser, ICtx);
                         if (ICtx.dev() == null) {
-                                reportAndRecoverFromError(ae);return;
+                            reportAndRecoverFromError(ae);
+                            return;
                         }
                         NumberContext nc = ICtx.dev().number();
                         if (nc == null) {
-                            reportAndRecoverFromError(ae);return;
+                            reportAndRecoverFromError(ae);
+                            return;
                         }
-                        Integer devnum = parseIntFromNumberContext(nc,parser);
+                        Integer devnum = parseIntFromNumberContext(nc, parser);
                         if (devnum == null) {
-                            reportAndRecoverFromError(ae);return;
+                            reportAndRecoverFromError(ae);
+                            return;
                         }
                         i.device = devnum;
                     }
@@ -209,7 +211,7 @@ public class AsmNg {
                 //parse direct numbers
                 NumberContext nc = ctx.number();
                 if (nc != null) {
-                    Integer i = parseIntFromNumberContext(nc,parser);
+                    Integer i = parseIntFromNumberContext(nc, parser);
                     m.value = i;
                 }
                 //undefined number will assume to 0
@@ -243,7 +245,7 @@ public class AsmNg {
                 }
                 DupArgumentContext dactx = ctx.dupArgument();
                 if (dactx != null) {
-                    Integer count = parseIntFromNumberContext(dactx.count().number(),parser);
+                    Integer count = parseIntFromNumberContext(dactx.count().number(), parser);
                     if (count <= 1) {
                         //throw new RuntimeException("Internal error: count should be greater than 1");
                         reportError(new AssemblerException("DUP count should be greater than 1", parser, dactx));
@@ -252,7 +254,7 @@ public class AsmNg {
                     WordArgumentContext what = dactx.wordArgument();
                     int whatnum = 0;
                     if (!"?".equals(what.getText())) {
-                        whatnum = parseIntFromNumberContext(what.number(),parser);
+                        whatnum = parseIntFromNumberContext(what.number(), parser);
                     }
                     //System.out.println("DUP="+count+" of "+whatnum);
                     for (int mm = 1; mm < count; mm++) {
@@ -291,7 +293,7 @@ public class AsmNg {
                     //TODO FIX IT with common error message
                     reportAndRecoverFromError(
                             new AssemblerException("Error: already defined label " + lab.getFullName(),
-                                parser, ctx));
+                                    parser, ctx));
                     return;
                 }
 
@@ -312,7 +314,7 @@ public class AsmNg {
             @Override
             public void exitOrgAddress(OrgAddressContext ctx) {
                 NumberContext n = ctx.address().number();
-                Integer i = parseIntFromNumberContext(n,parser);
+                Integer i = parseIntFromNumberContext(n, parser);
                 address = i;
             }
 
@@ -355,13 +357,13 @@ public class AsmNg {
                     case IO:
                         if (iw.instruction.opcode == Instruction.INT.opcode) {
                             if (iw.device < 0 || iw.device > 7) {
-                                reportError(new AssemblerException("Second pass: vector exceed limits [0..7]",parser));
+                                reportError(new AssemblerException("Second pass: vector exceed limits [0..7]", parser));
                             }
                             iw.value = iw.instruction.opcode | iw.device;
                             break;
                         }
                         if (iw.device < 0 || iw.device > 255) {
-                            reportError(new AssemblerException("Second pass: device number exceed limits [0..0xff]",parser));
+                            reportError(new AssemblerException("Second pass: device number exceed limits [0..0xff]", parser));
                         }
                         iw.value = iw.instruction.opcode | iw.device;
                         break;
@@ -391,7 +393,7 @@ public class AsmNg {
         return prog;
     }
 
-    private static Integer parseIntFromNumberContext(NumberContext nc,Parser parser) {
+    private static Integer parseIntFromNumberContext(NumberContext nc, Parser parser) {
         Integer number = null;
         String text = null;
         if (nc.DECIMAL() != null) {
@@ -409,8 +411,8 @@ public class AsmNg {
             number = Integer.parseInt(text, 16);
             return number;
         }
-        if (number==null) {
-            throw new AssemblerException("Could not recognize valid number while parsing "+nc.getText()+" operand",parser);
+        if (number == null) {
+            throw new AssemblerException("Could not recognize valid number while parsing " + nc.getText() + " operand", parser);
         }
         return number;
     }
@@ -588,7 +590,7 @@ public class AsmNg {
             case BCompNGParser.INT:
                 i = Instruction.INT;
                 break;
-                
+
             default:
         }
         return i;
@@ -606,7 +608,7 @@ public class AsmNg {
                 am.addressation = AddressingMode.AddressingType.DIRECT_ABSOLUTE;
                 DirectAbsoluteContext dactx = octx.directAbsolute();
                 if (dactx.address() != null) {
-                    am.number = parseIntFromNumberContext(dactx.address().number(),parser);
+                    am.number = parseIntFromNumberContext(dactx.address().number(), parser);
                 }
                 if (dactx.label() != null) {
                     am.reference = referenceByLabelContext(dactx.label());
@@ -626,7 +628,7 @@ public class AsmNg {
                 break;
             case BCompNGParser.RULE_displacementSP:
                 am.addressation = AddressingMode.AddressingType.DISPLACEMENT_SP;
-                Integer number_sp = parseIntFromNumberContext(octx.displacementSP().number(),parser);
+                Integer number_sp = parseIntFromNumberContext(octx.displacementSP().number(), parser);
                 am.number = number_sp;
                 break;
             case BCompNGParser.RULE_directRelative:
@@ -635,18 +637,18 @@ public class AsmNg {
                 break;
             case BCompNGParser.RULE_directLoad:
                 am.addressation = AddressingMode.AddressingType.DIRECT_LOAD;
-                Integer number_dl = parseIntFromNumberContext(octx.directLoad().number(),parser);
+                Integer number_dl = parseIntFromNumberContext(octx.directLoad().number(), parser);
                 am.number = number_dl;
                 break;
             default:
-                throw new AssemblerException("Internal error: Wrong OperandContext while parsing addressing mode",parser);
+                throw new AssemblerException("Internal error: Wrong OperandContext while parsing addressing mode", parser);
         }
         return am;
     }
 
     private String referenceByLabelContext(LabelContext lctx) {
         if (lctx == null) {
-            AssemblerException ae =  new AssemblerException("Internal error: LabelContex cant be null here",parser);
+            AssemblerException ae = new AssemblerException("Internal error: LabelContex cant be null here", parser);
             reportError(ae);
         }
         //make String copy. Do not remove new String(..)
@@ -676,15 +678,14 @@ public class AsmNg {
                     }
 //                    l = labels.get(iw.operand.reference);
                     if (l == null) {
-                        reportError(new AssemblerException("Second pass: label reference "+iw.operand.reference+" not found",parser));
-                    }
-                    else { 
+                        reportError(new AssemblerException("Second pass: label reference " + iw.operand.reference + " not found", parser));
+                    } else {
                         num = l.address;
                     }
                 }
                 if ((num > MemoryWord.MAX_ADDRESS) || (num < 0)) {
                     //TODO error number exceed limit values
-                    reportError(new AssemblerException("Second pass: memory address 0x"+Integer.toHexString(num)+" out of range [0..0x7FF]",parser));
+                    reportError(new AssemblerException("Second pass: memory address 0x" + Integer.toHexString(num) + " out of range [0..0x7FF]", parser));
                 }
                 iw.value = iw.instruction.opcode | (num & MemoryWord.MAX_ADDRESS);
                 break;
@@ -701,10 +702,10 @@ public class AsmNg {
                 if (iw.operand.number != MemoryWord.UNDEFINED) {
                     num = iw.operand.number;
                 } else {
-                    reportError(new AssemblerException("Second pass: number shoud present in command",parser));
+                    reportError(new AssemblerException("Second pass: number shoud present in command", parser));
                 }
                 if (num > 127 || num < -128) {
-                    reportError(new AssemblerException("Second pass: stack displasment exceed limits [-127..128]",parser));
+                    reportError(new AssemblerException("Second pass: stack displasment exceed limits [-127..128]", parser));
                 }
                 iw.value = iw.instruction.opcode | 0x0C00 | (num & 0xFF);
                 break;
@@ -715,17 +716,17 @@ public class AsmNg {
                 if (iw.operand.number != MemoryWord.UNDEFINED) {
                     num = iw.operand.number;
                 } else {
-                    reportError(new AssemblerException("Second pass: number shoud present in command",parser));
+                    reportError(new AssemblerException("Second pass: number shoud present in command", parser));
                 }
                 if (num > 255 || num < -128) {
                     //throw new AssemblerException(parser);
-                    reportError(new AssemblerException("Second pass: number exceed limits in direct load",parser));
+                    reportError(new AssemblerException("Second pass: number exceed limits in direct load", parser));
                     //throw new RuntimeException("Internal error: ");
                 }
                 iw.value = iw.instruction.opcode | 0x0F00 | (num & 0xFF);
                 break;
             default:
-                reportError(new AssemblerException("Second pass: addressing mode is not properly defined",parser));
+                reportError(new AssemblerException("Second pass: addressing mode is not properly defined", parser));
         }
     }
 
@@ -747,7 +748,7 @@ public class AsmNg {
 
         Label l = labels.get(reference);
         if (l == null) {
-            AssemblerException ae = new AssemblerException("Second pass: label refference "+reference+" not found",parser);
+            AssemblerException ae = new AssemblerException("Second pass: label refference " + reference + " not found", parser);
             reportError(ae);
             return 0;
         }
@@ -755,7 +756,7 @@ public class AsmNg {
         num = l.address - iw.address - 1; //-1 to fix impact of fetch cycle
         //TODO FIX
         if (num > 127 || num < -128) {
-            AssemblerException ae = new AssemblerException("Second pass: label "+reference+" displacement exceed limits [-127..128]",parser);
+            AssemblerException ae = new AssemblerException("Second pass: label " + reference + " displacement exceed limits [-127..128]", parser);
             reportError(ae);
             num = 0;
         }
@@ -765,7 +766,7 @@ public class AsmNg {
     private void reportError(AssemblerException ae) {
         errHandler.reportError(parser, ae);
     }
-    
+
     private void reportAndRecoverFromError(AssemblerException ae) {
         errHandler.reportError(parser, ae);
         errHandler.recover(parser, ae);

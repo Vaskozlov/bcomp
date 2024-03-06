@@ -6,9 +6,8 @@
 package ru.ifmo.cs.bcomp.assembler;
 
 /**
- *
  * @author serge
  */
 public class WordDirective extends MemoryWord {
-    
+
 }

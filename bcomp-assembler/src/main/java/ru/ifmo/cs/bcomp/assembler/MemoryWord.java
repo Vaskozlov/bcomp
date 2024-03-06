@@ -6,7 +6,6 @@
 package ru.ifmo.cs.bcomp.assembler;
 
 /**
- *
  * @author serge
  */
 public class MemoryWord {
@@ -20,11 +19,11 @@ public class MemoryWord {
 
     @Override
     public String toString() {
-        return Integer.toHexString(address+0x100000).substring(3) + "| " +
-                (label != null ? label.name + ": " : "" ) +
+        return Integer.toHexString(address + 0x100000).substring(3) + "| " +
+                (label != null ? label.name + ": " : "") +
                 "WORD " +
-                (value != UNDEFINED? " 0x"+Integer.toHexString(value): "");
+                (value != UNDEFINED ? " 0x" + Integer.toHexString(value) : "");
     }
-    
-    
+
+
 }

@@ -1,6 +1,8 @@
 # bcomp (Basic Computer)
-This is simple computer model studied in ITMO University since 1982 by first year students. 
-Its features are simple instructions set (inspired from PDP-8 and PDP-11), simple microprogram model and logic scheme to easy learn basics of computer architecture.
+
+This is simple computer model studied in ITMO University since 1982 by first year students.
+Its features are simple instructions set (inspired from PDP-8 and PDP-11), simple microprogram model and logic scheme to
+easy learn basics of computer architecture.
 
 All documentation is unfortunativelly in Russian. You can look at https://se.ifmo.ru/courses/csbasics for details.
 There is also lectures track on https://www.youtube.com/playlist?list=PLBWafxh1dFuwbs2bc_ba_1FIm4SzFYg2p

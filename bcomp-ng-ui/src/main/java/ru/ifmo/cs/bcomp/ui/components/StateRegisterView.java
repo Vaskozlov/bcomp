@@ -12,10 +12,9 @@ import ru.ifmo.cs.components.Utils;
 import ru.ifmo.cs.components.Register;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
-public class StateRegisterView{
+public class StateRegisterView {
 //	private final int formattedWidth;
 //	private MouseMotionAdapter listener = new MouseMotionAdapter() {
 //		private String tooltip = null;

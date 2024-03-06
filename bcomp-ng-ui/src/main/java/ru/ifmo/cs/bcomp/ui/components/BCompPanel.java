@@ -4,108 +4,106 @@
 
 package ru.ifmo.cs.bcomp.ui.components;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.Map;
-
 import ru.ifmo.cs.bcomp.ControlSignal;
-
 import ru.ifmo.cs.bcomp.SignalListener;
 
 import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Map;
 
 import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.COLOR_ACTIVE;
 import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.COLOR_BUS;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public abstract class BCompPanel extends ActivateblePanel {
-	protected final ComponentManager cmanager;
-	private final RegisterProperties[] regProps;
-	protected Map<BusNames, BusView> busesMap;
+    protected final ComponentManager cmanager;
+    private final RegisterProperties[] regProps;
+    protected Map<BusNames, BusView> busesMap;
 
-	private SignalListener[] listeners;
-	protected RegPanel regPanel;
+    private SignalListener[] listeners;
+    protected RegPanel regPanel;
 
 
-	public BCompPanel(ComponentManager cmanager, RegisterProperties[] regProps, Map<BusNames, BusView> baseMap) {
-		setLayout(new BorderLayout());
-		this.cmanager = cmanager;
-		this.regProps = regProps;
-		this.busesMap = baseMap;
-		regPanel = new RegPanel();
-	}
-	protected class RegPanel extends JComponent {
-		RegPanel() {
-			setLayout(new GridBagLayout());
-		}
-	}
+    public BCompPanel(ComponentManager cmanager, RegisterProperties[] regProps, Map<BusNames, BusView> baseMap) {
+        setLayout(new BorderLayout());
+        this.cmanager = cmanager;
+        this.regProps = regProps;
+        this.busesMap = baseMap;
+        regPanel = new RegPanel();
+    }
 
-	protected void setSignalListeners(SignalListener[] listeners) {
-		this.listeners = listeners;
-	}
+    protected class RegPanel extends JComponent {
+        RegPanel() {
+            setLayout(new GridBagLayout());
+        }
+    }
 
-	protected SignalListener[] getSignalListeners() {
-		return listeners;
-	}
+    protected void setSignalListeners(SignalListener[] listeners) {
+        this.listeners = listeners;
+    }
 
-	private void drawBuses(Graphics g) {
-		ArrayList<BusView> openbuses = new ArrayList<BusView>();
-		ArrayList<ControlSignal> signals = cmanager.getActiveSignals();
+    protected SignalListener[] getSignalListeners() {
+        return listeners;
+    }
 
-		for (BusView bus : busesMap.values()) {
-			for (ControlSignal signal : bus.getSignals())
-				if (signals.contains(signal))
-					openbuses.add(bus);
+    private void drawBuses(Graphics g) {
+        ArrayList<BusView> openbuses = new ArrayList<BusView>();
+        ArrayList<ControlSignal> signals = cmanager.getActiveSignals();
 
-			bus.draw(g, COLOR_BUS);
-		}
+        for (BusView bus : busesMap.values()) {
+            for (ControlSignal signal : bus.getSignals())
+                if (signals.contains(signal))
+                    openbuses.add(bus);
 
-		for (BusView bus : openbuses)
-			bus.draw(g, COLOR_ACTIVE);
-	}
+            bus.draw(g, COLOR_BUS);
+        }
 
-	private void drawOpenBuses(Color color) {
-		Graphics g = getGraphics();
-		ArrayList<ControlSignal> signals = cmanager.getActiveSignals();
+        for (BusView bus : openbuses)
+            bus.draw(g, COLOR_ACTIVE);
+    }
 
-		for (BusView bus : busesMap.values())
-			for (ControlSignal signal : bus.getSignals())
-				if (signals.contains(signal))
-					bus.draw(g, color);
-	}
+    private void drawOpenBuses(Color color) {
+        Graphics g = getGraphics();
+        ArrayList<ControlSignal> signals = cmanager.getActiveSignals();
 
-	public void stepStart() {
-		drawOpenBuses(COLOR_BUS);
-	}
+        for (BusView bus : busesMap.values())
+            for (ControlSignal signal : bus.getSignals())
+                if (signals.contains(signal))
+                    bus.draw(g, color);
+    }
 
-	public void stepFinish() {
-		drawOpenBuses(COLOR_ACTIVE);
-	}
+    public void stepStart() {
+        drawOpenBuses(COLOR_BUS);
+    }
 
-	@Override
-	public void panelActivate() {
+    public void stepFinish() {
+        drawOpenBuses(COLOR_ACTIVE);
+    }
 
-		cmanager.panelActivate(this);
+    @Override
+    public void panelActivate() {
 
-		for (RegisterProperties prop : regProps) {
-			RegisterView reg = cmanager.getRegisterView(prop.reg);
-			reg.setProperties(prop.x, prop.y, prop.hex,prop.isLeft);
-			reg.setPreferredSize(reg.getSize());
-			reg.setTitle(prop.reg.toString());
-			regPanel.add(reg, prop.constraints);
-		}
-	}
+        cmanager.panelActivate(this);
 
-	@Override
-	public void panelDeactivate() {
-		cmanager.panelDeactivate();
-	}
+        for (RegisterProperties prop : regProps) {
+            RegisterView reg = cmanager.getRegisterView(prop.reg);
+            reg.setProperties(prop.x, prop.y, prop.hex, prop.isLeft);
+            reg.setPreferredSize(reg.getSize());
+            reg.setTitle(prop.reg.toString());
+            regPanel.add(reg, prop.constraints);
+        }
+    }
 
-	@Override
-	public void paintComponent(Graphics g) {
-		drawBuses(g);
-	}
+    @Override
+    public void panelDeactivate() {
+        cmanager.panelDeactivate();
+    }
+
+    @Override
+    public void paintComponent(Graphics g) {
+        drawBuses(g);
+    }
 }

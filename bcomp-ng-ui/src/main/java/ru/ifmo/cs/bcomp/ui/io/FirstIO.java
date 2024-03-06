@@ -1,10 +1,12 @@
 package ru.ifmo.cs.bcomp.ui.io;
+
 import ru.ifmo.cs.bcomp.IOCtrl;
 import ru.ifmo.cs.bcomp.ui.components.RegisterView;
+
 import javax.swing.*;
 import java.awt.*;
 
-import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.*;
+import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.COLOR_BACKGROUND;
 
 public class FirstIO extends IODevice {
     private RegisterView output;
@@ -28,7 +30,7 @@ public class FirstIO extends IODevice {
             gridx = 3;
             gridwidth = GridBagConstraints.REMAINDER;
         }};
-        ButtonReady button = new ButtonReady(ioctrl,getRes().getString("ready"));
+        ButtonReady button = new ButtonReady(ioctrl, getRes().getString("ready"));
         ioctrl.addDestination(1, button);
         ioctrl.addDestination(0, output);
         panel.add(output, constraints);

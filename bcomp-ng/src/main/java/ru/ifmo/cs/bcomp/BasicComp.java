@@ -4,7 +4,6 @@
 package ru.ifmo.cs.bcomp;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class BasicComp {

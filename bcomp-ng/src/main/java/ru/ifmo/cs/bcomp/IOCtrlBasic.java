@@ -6,7 +6,6 @@ package ru.ifmo.cs.bcomp;
 import ru.ifmo.cs.components.*;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class IOCtrlBasic extends IOCtrl {
@@ -45,21 +44,21 @@ public class IOCtrlBasic extends IOCtrl {
         Valve clearFlag = new Valve(Consts.consts[0], 1, 0, 0, writeToRegister[STATE]);
         Valve r0;
         checkRegister(
-            // Register 0
-            r0 = new Valve(ioctrl, 8, 0, 0),
-            // Register 1
-            new Valve(ioctrl, 8, 0, 1,
-                // Input - state into iodata 6th bit
-                new Valve(Consts.consts[1], 1, 0, IOControlSignal.IN.ordinal(),
-                        new Valve(state, 1, 0, 0, new PartWriter(iodata, 1, READYBIT)),
-                        rdy
-                ),
-                // Output - set IRQ
-                new Valve(Consts.consts[1], 1, 0, IOControlSignal.OUT.ordinal(),
-                        writeToRegister[IRQ] = new Valve(iodata, irqreg.width, 0, 0, irqreg, cpu.getIRQReqValve()),
-                        rdy
+                // Register 0
+                r0 = new Valve(ioctrl, 8, 0, 0),
+                // Register 1
+                new Valve(ioctrl, 8, 0, 1,
+                        // Input - state into iodata 6th bit
+                        new Valve(Consts.consts[1], 1, 0, IOControlSignal.IN.ordinal(),
+                                new Valve(state, 1, 0, 0, new PartWriter(iodata, 1, READYBIT)),
+                                rdy
+                        ),
+                        // Output - set IRQ
+                        new Valve(Consts.consts[1], 1, 0, IOControlSignal.OUT.ordinal(),
+                                writeToRegister[IRQ] = new Valve(iodata, irqreg.width, 0, 0, irqreg, cpu.getIRQReqValve()),
+                                rdy
+                        )
                 )
-            )
         );
 
         if (type == TYPE.INPUT || type == TYPE.INPUTOUTPUT) {

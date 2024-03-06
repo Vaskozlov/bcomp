@@ -6,7 +6,6 @@ package ru.ifmo.cs.bcomp;
 import ru.ifmo.cs.components.*;
 
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public abstract class IOCtrl {
@@ -29,23 +28,23 @@ public abstract class IOCtrl {
         ioaddr = cpu.getIOBuses().get(IOBuses.IOAddr);
         ioctrl = (CtrlBus) cpu.getIOBuses().get(IOBuses.IOCtrl);
         ioctrl.addDestination(
-            // Is set DI?
-            new Not(IOControlSignal.DI.ordinal(), new Valve(ioctrl, 1, IOControlSignal.EI.ordinal(), 0,
-                // Is set EI?
-                new Not(0, new Valve(ioctrl, 1, IOControlSignal.IRQ.ordinal(), 0,
-                    // Is set IRQ?
-                    new Not(0, new Valve(ioctrl, 1, IOControlSignal.RDY.ordinal(), 0,
-                        // Is set RDY?
-                        new Not(0, new Valve(new InputBus(8 - width, width, ioaddr), 8 - width, 0, 0,
-                            // Requested my address?
-                            new Comparer(devaddr,
-                                    // Ok, decode register
-                                    chkregister = new Decoder(ioaddr, 0, width, 0)
-                            )
+                // Is set DI?
+                new Not(IOControlSignal.DI.ordinal(), new Valve(ioctrl, 1, IOControlSignal.EI.ordinal(), 0,
+                        // Is set EI?
+                        new Not(0, new Valve(ioctrl, 1, IOControlSignal.IRQ.ordinal(), 0,
+                                // Is set IRQ?
+                                new Not(0, new Valve(ioctrl, 1, IOControlSignal.RDY.ordinal(), 0,
+                                        // Is set RDY?
+                                        new Not(0, new Valve(new InputBus(8 - width, width, ioaddr), 8 - width, 0, 0,
+                                                // Requested my address?
+                                                new Comparer(devaddr,
+                                                        // Ok, decode register
+                                                        chkregister = new Decoder(ioaddr, 0, width, 0)
+                                                )
+                                        ))
+                                ))
                         ))
-                    ))
                 ))
-            ))
         );
     }
 
@@ -72,7 +71,6 @@ public abstract class IOCtrl {
     public abstract void setData(long value);
 
     /**
-     *
      * @deprecated
      */
     public void addDestination(Register reg, DataDestination... dsts) {

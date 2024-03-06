@@ -3,11 +3,7 @@
  */
 package ru.ifmo.cs.bcomp.ui.io;
 
-import ru.ifmo.cs.bcomp.IOCtrl;
-import ru.ifmo.cs.components.DataDestination;
-
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class BComp2BCompIODev {

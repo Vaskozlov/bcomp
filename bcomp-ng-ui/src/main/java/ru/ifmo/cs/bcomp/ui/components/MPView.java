@@ -4,16 +4,7 @@
 
 package ru.ifmo.cs.bcomp.ui.components;
 
-import java.util.ArrayList;
-import javax.swing.JCheckBox;
-import ru.ifmo.cs.bcomp.CPU;
-
-import ru.ifmo.cs.bcomp.SignalListener;
-import ru.ifmo.cs.bcomp.ui.GUI;
-import static ru.ifmo.cs.bcomp.ui.components.DisplayStyles.*;
-
 /**
- *
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class MPView {

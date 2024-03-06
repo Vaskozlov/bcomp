@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.IntervalSet;
 
 /**
- *
  * @author serge
  */
 public class AssemblerAntlrErrorStrategy extends DefaultErrorStrategy {
@@ -23,15 +22,15 @@ public class AssemblerAntlrErrorStrategy extends DefaultErrorStrategy {
             super.reportError(recognizer, e);
             return;
         }
-        AssemblerException ae = (AssemblerException)e;
+        AssemblerException ae = (AssemblerException) e;
         // if we've already reported an error and have not matched a token
         // yet successfully, don't report any errors.
         //if (inErrorRecoveryMode(recognizer)) {
-            //System.err.print("[SPURIOUS] ");
+        //System.err.print("[SPURIOUS] ");
         //    return; // don't report spurious errors
         //}
         beginErrorCondition(recognizer);
-        recognizer.notifyErrorListeners(ae.getOffendingToken(),ae.getMessage(), ae);
+        recognizer.notifyErrorListeners(ae.getOffendingToken(), ae.getMessage(), ae);
     }
 
     @Override
@@ -41,23 +40,23 @@ public class AssemblerAntlrErrorStrategy extends DefaultErrorStrategy {
 //						   ", lastErrorIndex="+
 //						   lastErrorIndex+
 //						   ", states="+lastErrorStates);
-            if ( lastErrorIndex==recognizer.getInputStream().index() &&
-                    lastErrorStates != null &&
-                    lastErrorStates.contains(recognizer.getState()) ) {
-                    // uh oh, another error at same token index and previously-visited
-                    // state in ATN; must be a case where LT(1) is in the recovery
-                    // token set so nothing got consumed. Consume a single token
-                    // at least to prevent an infinite loop; this is a failsafe.
+        if (lastErrorIndex == recognizer.getInputStream().index() &&
+                lastErrorStates != null &&
+                lastErrorStates.contains(recognizer.getState())) {
+            // uh oh, another error at same token index and previously-visited
+            // state in ATN; must be a case where LT(1) is in the recovery
+            // token set so nothing got consumed. Consume a single token
+            // at least to prevent an infinite loop; this is a failsafe.
 //			System.err.println("seen error condition before index="+
 //							   lastErrorIndex+", states="+lastErrorStates);
 //			System.err.println("FAILSAFE consumes "+recognizer.getTokenNames()[recognizer.getInputStream().LA(1)]);
-                    recognizer.consume();
-            }
-            lastErrorIndex = recognizer.getInputStream().index();
-            if ( lastErrorStates==null ) lastErrorStates = new IntervalSet();
-            lastErrorStates.add(recognizer.getState());
-            IntervalSet followSet = getErrorRecoverySet(recognizer);
-            consumeUntil(recognizer, followSet);
-    }    
-    
+            recognizer.consume();
+        }
+        lastErrorIndex = recognizer.getInputStream().index();
+        if (lastErrorStates == null) lastErrorStates = new IntervalSet();
+        lastErrorStates.add(recognizer.getState());
+        IntervalSet followSet = getErrorRecoverySet(recognizer);
+        consumeUntil(recognizer, followSet);
+    }
+
 }
