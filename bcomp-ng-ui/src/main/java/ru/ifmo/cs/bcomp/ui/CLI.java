@@ -15,17 +15,17 @@ import java.util.Scanner;
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
  */
 public class CLI {
-
     private final BasicComp bcomp;
     private final CPU cpu;
     private final IOCtrl[] ioctrls;
-    private final ArrayList<Long> writelist = new ArrayList<Long>();
+    private final ArrayList<Long> writeList = new ArrayList<>();
 
     private int sleeptime = 1;
     private volatile long savedPointer;
     private volatile boolean printOnStop = true;
     private volatile boolean printRegsTitle = false;
     private volatile boolean printMicroTitle = false;
+    private volatile boolean printMemoryAccesses = false;
     private volatile int sleep = 0;
 
     public CLI(BasicComp bcomp) {
@@ -35,9 +35,21 @@ public class CLI {
         cpu.addDestination(ControlSignal.STOR, value -> {
             long addr = cpu.getRegValue(Reg.AR);
 
-            if (!writelist.contains(addr)) // Saving changed mem addr to print later
-            {
-                writelist.add(addr);
+            if (printMemoryAccesses) {
+                println("STORE: " + Utils.toHex(addr, 11) + " " + Utils.toHex(value, 16));
+            }
+
+            // Saving changed mem addr to print later
+            if (!writeList.contains(addr)) {
+                writeList.add(addr);
+            }
+        });
+
+        cpu.addDestination(ControlSignal.LOAD, value -> {
+            long addr = cpu.getRegValue(Reg.AR);
+
+            if (printMemoryAccesses) {
+                println("LOAD: " + Utils.toHex(addr, 11) + " " + Utils.toHex(value, 16));
             }
         });
 
@@ -46,7 +58,7 @@ public class CLI {
                 return;
             }
 
-            writelist.clear();
+            writeList.clear();
             // Saving IP/MP to print registers later
             savedPointer = cpu.getRegValue(cpu.getClockState() ? Reg.IP : Reg.MP);
             printRegsTitle();
@@ -60,10 +72,10 @@ public class CLI {
                 return;
             }
 
-            printRegs(writelist.isEmpty() ? "" : " " + getMemory(writelist.remove(0)));
+            printRegs(writeList.isEmpty() ? ";;" : ";" + getMemory(writeList.remove(0)));
 
-            for (Long wraddr : writelist) {
-                println(String.format("%1$46s", " ") + getMemory(wraddr));
+            for (Long wraddr : writeList) {
+                println(String.format("%1$46s", ";") + getMemory(wraddr));
             }
         });
 
@@ -87,7 +99,7 @@ public class CLI {
     }
 
     private String getMemory(long addr) {
-        return Utils.toHex(addr, 11) + " " + Utils.toHex(cpu.getMemory().getValue(addr), 16);
+        return Utils.toHex(addr, 11) + ";" + Utils.toHex(cpu.getMemory().getValue(addr), 16);
     }
 
     private void printMicroMemory(long addr) {
@@ -105,25 +117,60 @@ public class CLI {
             return;
         }
 
-        print("Адр " + (cpu.getClockState() ? "Знчн" : "   МК    "));
-        for (Reg reg : printRegs) {
-            int width = (int) Math.ceil(cpu.getRegWidth(reg) / 4.0);
-            int l = (int) Math.ceil((width - reg.name().length()) / 2.0);
-            print(String.format(" %" + (l > 0 ? l : "") + "s%-" + (width - l) + "s", "", reg.name()));
-        }
-        println(" NZVC " + (cpu.getClockState() ? "Адр Знчн" : "СчМК"));
+        StringBuilder builder = new StringBuilder();
 
+        builder.append("Адр");
+
+        if (cpu.getClockState()) {
+            builder.append(";Знчн");
+        } else {
+            builder.append(";МК");
+        }
+
+        for (Reg reg : printRegs) {
+            builder.append(';');
+            builder.append(reg.name());
+        }
+
+        builder.append(";NZVC");
+
+        if (cpu.getClockState()) {
+            builder.append(";Адр;Знчн");
+        } else {
+            builder.append(";СчМК");
+        }
+
+        println(builder.toString());
         printRegsTitle = false;
     }
 
     private void printRegs(String add) {
-        print((cpu.getClockState() ? getMemory(savedPointer) : Utils.toHex(savedPointer, 8)
-                + ' ' + Utils.toHex(cpu.getMicroCode().getValue(savedPointer), 40)));
-        for (Reg reg : printRegs) {
-            print(' ' + getReg(reg));
+        StringBuilder builder = new StringBuilder();
+
+        if (cpu.getClockState()) {
+            builder.append(getMemory(savedPointer));
+        } else {
+            builder.append(Utils.toHex(savedPointer, 8));
+            builder.append(';');
+            builder.append(Utils.toHex(cpu.getMicroCode().getValue(savedPointer), 40));
         }
-        println(' ' + Utils.toBinary(cpu.getRegValue(Reg.PS) & 0xF, 4)
-                + (cpu.getClockState() ? add : "  " + getReg(Reg.MP)));
+
+        for (Reg reg : printRegs) {
+            builder.append(';');
+            builder.append(getReg(reg));
+        }
+
+        builder.append(';');
+        builder.append(Utils.toBinary(cpu.getRegValue(Reg.PS) & 0xF, 4));
+
+        if (cpu.getClockState()) {
+            builder.append(add);
+        } else {
+            builder.append(";");
+            builder.append(getReg(Reg.MP));
+        }
+
+        println(builder.toString());
     }
 
     private void printIO(int ioaddr) {
@@ -159,16 +206,20 @@ public class CLI {
                 + "io\t\t- Вывод состояния всех ВУ\n"
                 + "io addr\t\t- Вывод состояния указанного ВУ\n"
                 + "io addr value\t- Запись value в указанное ВУ\n"
+                + "smartio addr value\t- Запись value в указанное ВУ с ожиданием готовности, после успешной записи устанавливает готовность ВУ\n"
                 + "flag addr\t- Установка флага готовности указанного ВУ\n"
-                + "asm\t\t- Ввод программы на ассемблере\n"
+                + "asm\t\t\t- Ввод программы на ассемблере\n"
                 + "sleep value\t- Задержка между тактами при фоновом выполнении\n"
                 + "{exit|quit}\t- Выход из эмулятора\n"
                 + "(0000-FFFF)\t- Ввод шестнадцатеричного значения в клавишный регистр\n"
-                + "labelname\t- Ввод адреса метки в клавишный регистр"
+                + "labelname\t- Ввод адреса метки в клавишный регистр\n"
+                + "accesses\t- Выводить доступы к памяти\n"
+                + "exe\t\t- Выполняет команды по инструкция до останов\n"
+                + "load\t\t- Загрузка программы в память\n"
         );
     }
 
-    private Scanner input = new Scanner(System.in);
+    private final Scanner input = new Scanner(System.in);
 
     public void cli() {
         println("Эмулятор Базовой ЭВМ. Версия v1.45.10 " + CLI.class.getPackage().getImplementationVersion() + "\n"
@@ -186,22 +237,71 @@ public class CLI {
             processLine(line);
         }
 
-        Runtime.getRuntime().exit(0); // System.exit(0);
+        Runtime.getRuntime().exit(0);
+    }
+
+    private void readAndSetIp() throws Exception {
+        print("Введите начальный адрес: ");
+        String codeBegin = input.nextLine();
+        int codeAddress = Integer.parseInt(codeBegin, 16);
+        cpu.getRegister(Reg.IR).setValue(codeAddress);
+        checkResult(cpu.executeSetAddr());
+    }
+
+    private void loadToMemory() throws Exception {
+        readAndSetIp();
+
+        println("Введите текст программы. Для окончания введите END");
+
+        while (true) {
+            try {
+                String line = input.nextLine();
+
+                if (line.isBlank() || line.startsWith("#")) {
+                    continue;
+                }
+
+                if (checkCmd(line, "exit")) {
+                    return;
+                }
+
+                if (checkCmd(line, "end")) {
+                    println("Введите адрес исполнения: ");
+                    String executionBegin = input.nextLine();
+                    int executionAddress = Integer.parseInt(executionBegin, 16);
+                    cpu.getRegister(Reg.IR).setValue(executionAddress);
+                    checkResult(cpu.executeSetAddr());
+                    return;
+                }
+
+                if (checkCmd(line, "ip")) {
+                    readAndSetIp();
+                    continue;
+                }
+
+                int code = Integer.parseInt(line, 16);
+                cpu.getRegister(Reg.IR).setValue(code);
+                checkResult(cpu.executeWrite());
+            } catch (Exception e) {
+                println("Ошибка, попробуйте еще раз.");
+            }
+        }
     }
 
     @SuppressWarnings("WeakerAccess")
     protected void processLine(String line) {
-        int i, value;
-        String[] cmds = line.split("[ \t]+");
+        int i;
+        int value;
+        String[] cmds = line.strip().split("[ \t]+");
 
         if (cmds.length == 0) {
             return;
         }
 
-        for (i = 0, printRegsTitle = printMicroTitle = true; i < cmds.length; i++) {
+        for (i = 0, printRegsTitle = printMicroTitle = true; i != cmds.length; ++i) {
             String cmd = cmds[i];
 
-            if (cmd.equals("")) {
+            if (cmd.isEmpty()) {
                 continue;
             }
 
@@ -210,7 +310,7 @@ public class CLI {
             }
 
             if (checkCmd(cmd, "exit") || checkCmd(cmd, "quit")) {
-                Runtime.getRuntime().exit(0); // System.exit(0);
+                Runtime.getRuntime().exit(0);
             }
             if (checkCmd(cmd, "?") || checkCmd(cmd, "help")) {
                 printHelp();
@@ -328,6 +428,31 @@ public class CLI {
                     continue;
                 }
 
+                if (checkCmd(cmd, "smartio")) {
+                    if (i == cmds.length - 1) {
+                        for (int ioaddr = 0; ioaddr < 4; ioaddr++) {
+                            printIO(ioaddr);
+                        }
+                        continue;
+                    }
+
+                    int ioaddr = Integer.parseInt(cmds[++i], 16);
+
+                    if (i < cmds.length - 1) {
+                        value = Integer.parseInt(cmds[++i], 16);
+
+                        do {
+                            Thread.sleep(2);
+                        } while (ioctrls[ioaddr].isReady());
+
+                        ioctrls[ioaddr].setData(value);
+                        ioctrls[ioaddr].setReady();
+                    }
+
+                    printIO(ioaddr);
+                    continue;
+                }
+
                 if (checkCmd(cmd, "flag")) {
                     if (i == cmds.length - 1) {
                         throw new Exception("команда flag требует аргумент");
@@ -336,6 +461,35 @@ public class CLI {
                     int ioaddr = Integer.parseInt(cmds[++i], 16);
                     ioctrls[ioaddr].setReady();
                     printIO(ioaddr);
+                    continue;
+                }
+
+                if (checkCmd(cmd, "accesses")) {
+                    printMemoryAccesses = !printMemoryAccesses;
+                    println("Вывод доступов к памяти " + (printMemoryAccesses ? "включен" : "выключен"));
+                    continue;
+                }
+
+                if (checkCmd(cmd, "exe")) {
+                    Thread th = new Thread(() -> {
+                        try {
+                            checkResult(cpu.startContinue());
+
+                            do {
+                                checkResult(cpu.executeContinue());
+                                Thread.sleep(100);
+                            } while (cpu.getRegister(Reg.CR).getValue() != 0x100);
+
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    th.start();
+                    continue;
+                }
+
+                if (checkCmd(cmd, "load")) {
+                    loadToMemory();
                     continue;
                 }
 
@@ -392,11 +546,22 @@ public class CLI {
                 } else {
                     println("Неизвестная команда " + cmd);
                 }
-//					else
-//						value = asm.getLabelAddr(cmd.toUpperCase());
             } catch (Exception e) {
                 println("Неизвестная команда " + cmd);
             }
+        }
+    }
+
+    private void executeInstruction(int i, String[] cmds) throws InterruptedException {
+        try {
+            if (i == cmds.length - 1) {
+                sleep = sleeptime;
+                checkResult(cpu.startContinue());
+            } else {
+                checkResult(cpu.executeContinue());
+            }
+        } catch (Exception e) {
+            Thread.sleep(2);
         }
     }
 
