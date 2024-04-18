@@ -247,32 +247,26 @@ public class ComponentManager {
         };
         ioctrls = gui.getIOCtrls();
 
-        cpu.setTickStartListener(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (lockActivePanel) {
-                    if (activePanel != null)
-                        activePanel.stepStart();
-                }
-
-                openBuses.clear();
+        cpu.setTickStartListener(() -> {
+            synchronized (lockActivePanel) {
+                if (activePanel != null)
+                    activePanel.stepStart();
             }
+
+            openBuses.clear();
         });
 
-        cpu.setTickFinishListener(new Runnable() {
-            @Override
-            public void run() {
-                synchronized (lockActivePanel) {
-                    if (activePanel != null)
-                        activePanel.stepFinish();
-                }
-
-                if (delayPeriods[currentDelay] != 0)
-                    try {
-                        Thread.sleep(delayPeriods[currentDelay]);
-                    } catch (InterruptedException e) {
-                    }
+        cpu.setTickFinishListener(() -> {
+            synchronized (lockActivePanel) {
+                if (activePanel != null)
+                    activePanel.stepFinish();
             }
+
+            if (delayPeriods[currentDelay] != 0)
+                try {
+                    Thread.sleep(delayPeriods[currentDelay]);
+                } catch (InterruptedException e) {
+                }
         });
 
         for (ControlSignal cs : busSignals)
@@ -319,19 +313,9 @@ public class ComponentManager {
             }
         });
 
-        cpu.addDestination(SETC, new DataDestination() {
-            @Override
-            public void setValue(long value) {
-                flagViews[3].setActive(cpu.getProgramState(State.C) == 1);
-            }
-        });
+        cpu.addDestination(SETC, value -> flagViews[3].setActive(cpu.getProgramState(State.C) == 1));
 
-        cpu.addDestination(SETV, new DataDestination() {
-            @Override
-            public void setValue(long value) {
-                flagViews[2].setActive(cpu.getProgramState(State.V) == 1);
-            }
-        });
+        cpu.addDestination(SETV, value -> flagViews[2].setActive(cpu.getProgramState(State.V) == 1));
 
         cpu.addDestination(STNZ, new DataDestination() {
             @Override
@@ -341,14 +325,11 @@ public class ComponentManager {
             }
         });
 
-        cpu.addDestination(STOR, new DataDestination() {
-
-            public void setValue(long value) {
-                if (activePanel != null)
-                    mem.eventWrite();
-                else
-                    mem.updateLastAddr();
-            }
+        cpu.addDestination(STOR, value -> {
+            if (activePanel != null)
+                mem.eventWrite();
+            else
+                mem.updateLastAddr();
         });
     }
 
