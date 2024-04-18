@@ -8,8 +8,10 @@ import ru.ifmo.cs.bcomp.assembler.AsmNg;
 import ru.ifmo.cs.bcomp.assembler.Program;
 import ru.ifmo.cs.components.Utils;
 
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * @author Dmitry Afanasiev <KOT@MATPOCKuH.Ru>
@@ -19,6 +21,7 @@ public class CLI {
     private final CPU cpu;
     private final IOCtrl[] ioctrls;
     private final ArrayList<Long> writeList = new ArrayList<>();
+    private final ConcurrentMap<Integer, LinkedBlockingDeque<Integer>> pendingIO = new ConcurrentHashMap<>();
 
     private int sleeptime = 1;
     private volatile long savedPointer;
@@ -28,6 +31,9 @@ public class CLI {
     private volatile boolean printMemoryAccesses = false;
     private volatile int sleep = 0;
 
+    private final List<Long> monitoredMemoryWrite = new ArrayList<>();
+    private final Map<Integer, Thread> monitors = new HashMap<>();
+
     public CLI(BasicComp bcomp) {
         this.bcomp = bcomp;
 
@@ -35,7 +41,7 @@ public class CLI {
         cpu.addDestination(ControlSignal.STOR, value -> {
             long addr = cpu.getRegValue(Reg.AR);
 
-            if (printMemoryAccesses) {
+            if (printMemoryAccesses || monitoredMemoryWrite.contains(addr)) {
                 println("STORE: " + Utils.toHex(addr, 11) + " " + Utils.toHex(value, 16));
             }
 
@@ -92,6 +98,25 @@ public class CLI {
         });
 
         ioctrls = bcomp.getIOCtrls();
+
+        Thread ioPoller = new Thread(() -> {
+            while (true) {
+                try {
+                    for (Map.Entry<Integer, LinkedBlockingDeque<Integer>> entry : pendingIO.entrySet()) {
+                        if (!ioctrls[entry.getKey()].isReady() && !entry.getValue().isEmpty()) {
+                            ioctrls[entry.getKey()].setData(entry.getValue().pollFirst());
+                            ioctrls[entry.getKey()].setReady();
+                        }
+                    }
+
+                    Thread.sleep(2);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        ioPoller.start();
     }
 
     private String getReg(Reg reg) {
@@ -110,7 +135,7 @@ public class CLI {
         println(MCDecoder.getFormattedMC(cpu, addr));
     }
 
-    private Reg[] printRegs = new Reg[]{Reg.IP, Reg.CR, Reg.AR, Reg.DR, Reg.SP, Reg.BR, Reg.AC};
+    private final Reg[] printRegs = new Reg[]{Reg.IP, Reg.CR, Reg.AR, Reg.DR, Reg.SP, Reg.BR, Reg.AC};
 
     private void printRegsTitle() {
         if (!printRegsTitle) {
@@ -216,6 +241,10 @@ public class CLI {
                 + "accesses\t- Выводить доступы к памяти\n"
                 + "exe\t\t- Выполняет команды по инструкция до останов\n"
                 + "load\t\t- Загрузка программы в память\n"
+                + "monitor addr\t\t - следит за изменением ВУ\n"
+                + "awrite addr\t - выводит изменения в памяти данной ячейки\n"
+                + "rfrom addr\t - выводит значение ячейки памяти\n"
+                + "wto addr value\t - записывает значение по адресу\n"
         );
     }
 
@@ -441,15 +470,45 @@ public class CLI {
                     if (i < cmds.length - 1) {
                         value = Integer.parseInt(cmds[++i], 16);
 
-                        do {
-                            Thread.sleep(2);
-                        } while (ioctrls[ioaddr].isReady());
+                        if (!pendingIO.containsKey(ioaddr)) {
+                            pendingIO.put(ioaddr, new LinkedBlockingDeque<>());
+                        }
 
-                        ioctrls[ioaddr].setData(value);
-                        ioctrls[ioaddr].setReady();
+                        pendingIO.get(ioaddr).add(value);
                     }
 
                     printIO(ioaddr);
+                    continue;
+                }
+
+                if (checkCmd(cmd, "monitor")) {
+                    Integer ioaddr = Integer.parseInt(cmds[++i], 16);
+
+                    if (monitors.containsKey(ioaddr)) {
+                        monitors.remove(ioaddr);
+                        println("Удален мониторинг устройства с номером " + Utils.toHex(ioaddr, 11));
+                        continue;
+                    }
+
+                    Thread th = new Thread(() -> {
+                        while (true) {
+                            ioctrls[ioaddr].setReady();
+
+                            if (ioctrls[ioaddr].getData() != 0) {
+                                println(String.format("Device %x: %x", ioaddr, ioctrls[ioaddr].getData()));
+                                ioctrls[ioaddr].setData(0);
+                            }
+
+                            try {
+                                Thread.sleep(1);
+                            } catch (Exception e) {
+
+                            }
+                        }
+                    });
+                    monitors.put(ioaddr, th);
+                    println("Добавлен мониторинг устройства с номером " + Utils.toHex(ioaddr, 11));
+                    th.start();
                     continue;
                 }
 
@@ -464,6 +523,50 @@ public class CLI {
                     continue;
                 }
 
+                if (checkCmd(cmd, "awrite")) {
+                    if (i == cmds.length - 1) {
+                        throw new Exception("команда awrite требует аргумент");
+                    }
+
+                    long addr = Integer.parseInt(cmds[++i], 16);
+                    monitoredMemoryWrite.add(addr);
+                    println("Вывод изменений в памяти по адресу " + Utils.toHex(addr, 11));
+                    continue;
+                }
+
+                if (checkCmd(cmd, "rfrom")) {
+                    if (i == cmds.length - 1) {
+                        throw new Exception("команда rfrom требует аргумент");
+                    }
+
+                    long addr = Integer.parseInt(cmds[++i], 16);
+                    println("Значение ячейки памяти по адресу " + Utils.toHex(addr, 11) + ": " + Utils.toHex(cpu.getMemory().getValue(addr), 16));
+                    continue;
+                }
+
+                if (checkCmd(cmd, "wto")) {
+                    if (i == cmds.length - 1) {
+                        throw new Exception("команда rfrom требует аргумент адреса");
+                    }
+
+                    long addr = Integer.parseInt(cmds[++i], 16);
+
+                    if (i == cmds.length - 1) {
+                        throw new Exception("команда rfrom требует аргумент значение");
+                    }
+
+                    long valueToSet = Integer.parseInt(cmds[++i], 16);
+                    cpu.getMemory().setValue(addr, valueToSet);
+                    println(
+                            "Значение " +
+                                    Utils.toHex(valueToSet, 16) +
+                                    " было записано по адресу " +
+                                    Utils.toHex(addr, 11)
+                    );
+
+                    continue;
+                }
+
                 if (checkCmd(cmd, "accesses")) {
                     printMemoryAccesses = !printMemoryAccesses;
                     println("Вывод доступов к памяти " + (printMemoryAccesses ? "включен" : "выключен"));
@@ -473,11 +576,11 @@ public class CLI {
                 if (checkCmd(cmd, "exe")) {
                     Thread th = new Thread(() -> {
                         try {
+                            Thread.sleep(200);
                             checkResult(cpu.startContinue());
 
                             do {
-                                checkResult(cpu.executeContinue());
-                                Thread.sleep(100);
+                                fastExecution();
                             } while (cpu.getRegister(Reg.CR).getValue() != 0x100);
 
                         } catch (Exception e) {
@@ -552,14 +655,9 @@ public class CLI {
         }
     }
 
-    private void executeInstruction(int i, String[] cmds) throws InterruptedException {
+    private void fastExecution() throws Exception {
         try {
-            if (i == cmds.length - 1) {
-                sleep = sleeptime;
-                checkResult(cpu.startContinue());
-            } else {
-                checkResult(cpu.executeContinue());
-            }
+            checkResult(cpu.executeContinue());
         } catch (Exception e) {
             Thread.sleep(2);
         }
